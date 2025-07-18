@@ -1,12 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Box, VStack, Heading, useColorMode } from '@chakra-ui/react';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
 
 function App() {
   const [messages, setMessages] = useState([]);
-  const { colorMode, toggleColorMode } = useColorMode();
 
   const handleSend = async (text) => {
     const userMsg = { type: 'user', text };
@@ -21,23 +19,21 @@ function App() {
   };
 
   return (
-    <Box minH="100vh" bg={colorMode === 'dark' ? 'gray.900' : 'gray.100'}>
-      <VStack spacing={4} align="stretch" maxW="600px" mx="auto" pt={8} pb={24}>
-        <Heading size="lg" color={colorMode === 'dark' ? 'white' : 'gray.800'} textAlign="center" mb={2}>
-          🤖 StudyGPT
-        </Heading>
-        <Box flex={1} overflowY="auto" maxH="70vh" px={2}>
+    <div className="chat-app" style={{ minHeight: '100vh', background: '#1a202c', color: '#f7fafc', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ maxWidth: 600, width: '100%', margin: '0 auto', paddingTop: 32, paddingBottom: 120, flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <h1 style={{ textAlign: 'center', marginBottom: 16, fontSize: '2rem', fontWeight: 700 }}>🤖 StudyGPT</h1>
+        <div style={{ flex: 1, overflowY: 'auto', maxHeight: '70vh', padding: '0 8px' }}>
           {messages.map((msg, idx) => (
             <ChatMessage key={idx} type={msg.type} text={msg.text} />
           ))}
-        </Box>
-      </VStack>
-      <Box position="fixed" bottom={0} left={0} w="100%" bg={colorMode === 'dark' ? 'gray.900' : 'gray.100'} py={4} px={2} boxShadow="0 -2px 8px rgba(0,0,0,0.1)">
-        <Box maxW="600px" mx="auto">
+        </div>
+      </div>
+      <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: '#1a202c', padding: '1rem 0.5rem', boxShadow: '0 -2px 8px rgba(0,0,0,0.1)' }}>
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
           <ChatInput onSend={handleSend} />
-        </Box>
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }
 

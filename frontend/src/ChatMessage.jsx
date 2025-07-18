@@ -1,22 +1,31 @@
 import React from "react";
-import { Box, Flex, Text } from '@chakra-ui/react'
 
 function ChatMessage({ type, text }) {
-  const isUser = type === 'user'
+  const isUser = type === 'user';
   return (
-    <Flex justify={isUser ? 'flex-end' : 'flex-start'} mb={2}>
-      <Box
-        bg={isUser ? 'blue.500' : 'gray.200'}
-        color={isUser ? 'white' : 'black'}
-        px={4}
-        py={2}
-        borderRadius="lg"
-        maxW="75%"
+    <div
+      className={`chat-message ${isUser ? 'user' : 'bot'}`}
+      style={{
+        display: 'flex',
+        justifyContent: isUser ? 'flex-end' : 'flex-start',
+        marginBottom: '0.5rem',
+      }}
+    >
+      <div
+        className="chat-bubble"
+        style={{
+          background: isUser ? '#2563eb' : '#2d3748',
+          color: isUser ? '#fff' : '#f7fafc',
+          padding: '0.75rem 1.25rem',
+          borderRadius: '1.25rem',
+          maxWidth: '75%',
+          whiteSpace: 'pre-wrap',
+        }}
       >
-        <Text whiteSpace="pre-wrap">{text}</Text>
-      </Box>
-    </Flex>
-  )
+        {text}
+      </div>
+    </div>
+  );
 }
 
-export default ChatMessage
+export default ChatMessage;
