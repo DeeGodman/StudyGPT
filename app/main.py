@@ -3,6 +3,13 @@ from pydantic import BaseModel
 import openai
 import os
 
+from fastapi import FastAPI
+from app.query_route import router  # adjust import path if needed
+
+app = FastAPI()
+app.include_router(router)
+
+
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = FastAPI()
@@ -13,7 +20,7 @@ class QueryRequest(BaseModel):
 @app.post("/query")
 async def query_handler(req: QueryRequest):
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": "You are a helpful CS course assistant."},
             {"role": "user", "content": req.question}
