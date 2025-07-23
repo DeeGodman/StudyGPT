@@ -5,15 +5,34 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Plus, Mic, Send, SlidersHorizontal } from "lucide-react"
+import { queryBackend } from "@/lib/utils"
 
 export default function HomePage() {
   const [inputValue, setInputValue] = useState("")
+  const [response, setResponse] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    setResponse(null)
+    try {
+      const data = await queryBackend(inputValue)
+      setResponse(data?.response || JSON.stringify(data))
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <MainLayout>
       <div className="flex flex-col items-center justify-center min-h-[80vh] w-full">
         <h1 className="text-3xl font-semibold text-gray-900 mb-8 text-center">What's on your mind today?</h1>
-        <form className="w-full max-w-2xl flex flex-col items-center" onSubmit={e => e.preventDefault()}>
+        <form className="w-full max-w-2xl flex flex-col items-center" onSubmit={handleSubmit}>
           <div className="w-full flex items-center bg-white border border-gray-300 rounded-2xl shadow-sm px-6 py-4 mb-4">
             <Plus className="w-5 h-5 text-gray-400 mr-3" />
             <Input
@@ -30,6 +49,9 @@ export default function HomePage() {
             </Button>
           </div>
         </form>
+        {loading && <div className="mt-4 text-blue-600">Loading...</div>}
+        {error && <div className="mt-4 text-red-600">Error: {error}</div>}
+        {response && <div className="mt-4 p-4 bg-gray-100 rounded">{response}</div>}
         <div className="flex flex-wrap justify-center gap-2 mt-2">
           <Button variant="outline" className="rounded-full flex items-center gap-2 px-4 py-2 text-sm">
             <span className="text-green-600">🖼️</span> Create image

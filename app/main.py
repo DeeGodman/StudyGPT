@@ -1,18 +1,14 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from pydantic import BaseModel
 import openai
 import os
-
-from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.query_route import router  # adjust import path if needed
 
 app = FastAPI()
 app.include_router(router)
 
-
 openai.api_key = os.getenv("OPENAI_API_KEY")
-
-app = FastAPI()
 
 class QueryRequest(BaseModel):
     question: str
