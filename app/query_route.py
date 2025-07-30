@@ -1,14 +1,14 @@
 import os
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 from pinecone import Pinecone
 
 load_dotenv()
 
 router = APIRouter()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI()  # pulls OPENAI_API_KEY from env
 
 # Pinecone setup
 pinecone_api = os.getenv("PINECONE_API_KEY")
@@ -29,10 +29,11 @@ async def query_handler(req: QueryRequest):
 
     try:
         # Embed the question
-        embedding = openai.Embedding.create(
-            input=[question],
-            model="text-embedding-3-small"
-        )["data"][0]["embedding"]
+        response = client.embeddings.create(
+            model="text-embedding-3-small",
+            input=question
+        )
+        embedding = response.data[0].embedding
 
         # Retrieve top 5 similar chunks
         results = index.query(vector=embedding, top_k=5, include_metadata=True)
@@ -48,7 +49,7 @@ async def query_handler(req: QueryRequest):
         prompt = f"Use the following course materials to answer the question.\n---\n{context}\n---\nQuestion: {question}"
 
         # Get GPT response
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant for a university-level CS course."},
@@ -58,7 +59,7 @@ async def query_handler(req: QueryRequest):
             temperature=0.4
         )
 
-        return {"answer": response["choices"][0]["message"]["content"]}
+        return {"answer": response.choices[0].message.content}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

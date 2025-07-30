@@ -30,8 +30,6 @@ export default function Component() {
     "Software Architecture Assistance",
     "Expert System vs LLM",
     "Compiler Design Quiz Study",
-    "UK Visitor Visa Summary",
-    "Dinner Funding Help",
     "Cloud Service for Architecture ...",
     "Uber-like App Design",
     "IDS Implementation in Campus...",
@@ -44,8 +42,11 @@ export default function Component() {
       <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
         {/* Logo */}
         <div className="p-4">
-          <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-            <div className="w-4 h-4 bg-white rounded-full"></div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+              <div className="w-4 h-4 bg-white rounded-full"></div>
+            </div>
+            <span className="font-semibold text-lg">StudyGPT</span>
           </div>
         </div>
 
@@ -67,19 +68,7 @@ export default function Component() {
           </Button>
         </div>
 
-        {/* GPTs Section */}
-        <div className="px-3 mt-4">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-gray-700">
-            <Bot className="w-4 h-4" />
-            GPTs
-          </Button>
 
-          <div className="ml-7 mt-2">
-            <Button variant="ghost" className="w-full justify-start text-sm bg-gray-200 text-gray-900">
-              StudyGPT
-            </Button>
-          </div>
-        </div>
 
         {/* Chats Section */}
         <div className="px-3 mt-6 flex-1">

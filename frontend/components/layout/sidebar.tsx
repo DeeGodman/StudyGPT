@@ -11,15 +11,12 @@ export function Sidebar() {
   const pathname = usePathname()
 
   const chatHistory = [
-    "Software Architecture Assistance",
-    "Expert System vs LLM",
     "Compiler Design Quiz Study",
-    "UK Visitor Visa Summary",
-    "Dinner Funding Help",
+    "Expert System vs LLM",
+    "Software Architecture Assistance",
     "Cloud Service for Architecture ...",
     "Uber-like App Design",
     "IDS Implementation in Campus...",
-    "Questions on Academic Excelle...",
   ]
 
   const isActive = (path: string) => pathname === path
@@ -29,8 +26,11 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-4">
         <Link href="/">
-          <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center cursor-pointer">
-            <div className="w-4 h-4 bg-white rounded-full"></div>
+          <div className="flex items-center gap-3 cursor-pointer">
+            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+              <div className="w-4 h-4 bg-white rounded-full"></div>
+            </div>
+            <span className="text-lg font-semibold text-gray-900">StudyGPT</span>
           </div>
         </Link>
       </div>
@@ -52,10 +52,6 @@ export function Sidebar() {
           Search chats
         </Button>
 
-        <Button variant="ghost" className="w-full justify-start gap-3 text-gray-700">
-          <Library className="w-4 h-4" />
-          Library
-        </Button>
 
         <Link href="/history">
           <Button
@@ -108,19 +104,7 @@ export function Sidebar() {
         </Link>
       </div>
 
-      {/* GPTs Section */}
-      <div className="px-3 mt-4">
-        <Button variant="ghost" className="w-full justify-start gap-3 text-gray-700">
-          <Bot className="w-4 h-4" />
-          GPTs
-        </Button>
-
-        <div className="ml-7 mt-2">
-          <Button variant="ghost" className="w-full justify-start text-sm bg-gray-200 text-gray-900">
-            StudyGPT
-          </Button>
-        </div>
-      </div>
+      
 
       {/* Chats Section */}
       <div className="px-3 mt-6 flex-1">
@@ -133,7 +117,7 @@ export function Sidebar() {
                 variant="ghost"
                 className="w-full justify-start text-sm text-gray-700 h-auto py-2 px-3 text-left whitespace-normal"
               >
-                {chat}
+                {chat} 
               </Button>
             ))}
           </div>

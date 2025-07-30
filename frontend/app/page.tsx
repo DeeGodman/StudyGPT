@@ -31,7 +31,7 @@ export default function HomePage() {
   return (
     <MainLayout>
       <div className="flex flex-col items-center justify-center min-h-[80vh] w-full">
-        <h1 className="text-3xl font-semibold text-gray-900 mb-8 text-center">What's on your mind today?</h1>
+        <h1 className="text-3xl font-semibold text-gray-900 mb-8 text-center">What do you want to Study today?</h1>
         <form className="w-full max-w-2xl flex flex-col items-center" onSubmit={handleSubmit}>
           <div className="w-full flex items-center bg-white border border-gray-300 rounded-2xl shadow-sm px-6 py-4 mb-4">
             <Plus className="w-5 h-5 text-gray-400 mr-3" />
