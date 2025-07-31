@@ -10,7 +10,7 @@ function App() {
     const userMsg = { type: 'user', text };
     setMessages((msgs) => [...msgs, userMsg]);
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/query`, { question: text });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/query`, { query: text });
       const botMsg = { type: 'bot', text: res.data.answer };
       setMessages((msgs) => [...msgs, botMsg]);
     } catch (err) {
