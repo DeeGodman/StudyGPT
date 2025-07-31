@@ -13,7 +13,7 @@ export async function queryBackend(query: string) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ question: "Your Question Here" }),
   });
   if (!response.ok) {
     throw new Error(`Backend error: ${response.status}`);
