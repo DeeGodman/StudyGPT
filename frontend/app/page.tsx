@@ -107,6 +107,9 @@ export default function ChatPage() {
         difficulty: getDifficultyForQuery(currentInput),
       };
       setMessages((prev) => [...prev, assistantMessage]);
+      
+      // Convert assistant response to local language and play audio
+      await convertResponseToLocalAudio(data.answer);
     } catch (err: any) {
       setMessages((prev) => [
         ...prev,
@@ -151,6 +154,15 @@ export default function ChatPage() {
       return;
     }
 
+    // Check if Ghana NLP APIs are configured
+    const hasGhanaNLP = process.env.NEXT_PUBLIC_GHANA_TRANSLATE_URL && 
+                        process.env.NEXT_PUBLIC_GHANA_TTS_URL && 
+                        process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN;
+    
+    if (!hasGhanaNLP) {
+      console.warn("Ghana NLP APIs not configured, using basic speech recognition only");
+    }
+
     setIsListening(true);
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const rec = new SpeechRecognition();
@@ -160,47 +172,100 @@ export default function ChatPage() {
 
     rec.onresult = async (e: any) => {
       const text = e.results[0][0].transcript.trim();
+      console.log("Speech recognized:", text);
       setInputValue(text);
 
       try {
-        /* ---- Translate English → Twi ---- */
-        const trRes = await fetch(
-          `${process.env.NEXT_PUBLIC_GHANA_TRANSLATE_URL}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN}`,
-            },
-            body: JSON.stringify({
-              in: "en",
-              out: "tw", // change to "ewe", "ga", etc.
-              text,
-            }),
+        // Check if Ghana NLP APIs are configured
+        const hasGhanaNLP = process.env.NEXT_PUBLIC_GHANA_TRANSLATE_URL && 
+                            process.env.NEXT_PUBLIC_GHANA_TTS_URL && 
+                            process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN;
+        
+        if (hasGhanaNLP) {
+          console.log("Starting translation...");
+          console.log("Translate URL:", process.env.NEXT_PUBLIC_GHANA_TRANSLATE_URL);
+          console.log("Token:", process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN ? "Present" : "Missing");
+          
+          /* ---- Translate English → Twi ---- */
+          const trRes = await fetch(
+            `${process.env.NEXT_PUBLIC_GHANA_TRANSLATE_URL}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Cache-Control": "no-cache",
+                "Ocp-Apim-Subscription-Key": process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN || "",
+              },
+              body: JSON.stringify({
+                in: text,
+                lang: "en-tw"
+              }),
+            }
+          );
+          
+          console.log("Translation response status:", trRes.status);
+          
+          if (!trRes.ok) {
+            throw new Error(`Translation failed: ${trRes.status} ${trRes.statusText}`);
           }
-        );
-        const { translatedText } = await trRes.json();
+          
+          const translationData = await trRes.json();
+          console.log("Translation response:", translationData);
+          
+          const translatedText = translationData.translatedText || translationData.text || text;
+          console.log("Translated text:", translatedText);
 
-        /* ---- Text-to-Speech (Twi) ---- */
-        const ttsRes = await fetch(
-          `${process.env.NEXT_PUBLIC_GHANA_TTS_URL}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN}`,
-            },
-            body: JSON.stringify({
-              text: translatedText,
-              lang: "tw", // same language code you used above
-            }),
+          /* ---- Text-to-Speech (Twi) ---- */
+          console.log("Starting TTS...");
+          console.log("TTS URL:", process.env.NEXT_PUBLIC_GHANA_TTS_URL);
+          
+          const ttsRes = await fetch(
+            `${process.env.NEXT_PUBLIC_GHANA_TTS_URL}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Cache-Control": "no-cache",
+                "Ocp-Apim-Subscription-Key": process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN || "",
+              },
+              body: JSON.stringify({
+                text: translatedText,
+                language: "tw",
+                speaker_id: "twi_speaker_4"
+              }),
+            }
+          );
+          
+          console.log("TTS response status:", ttsRes.status);
+          
+          if (!ttsRes.ok) {
+            throw new Error(`TTS failed: ${ttsRes.status} ${ttsRes.statusText}`);
           }
-        );
-        const audioBlob = await ttsRes.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        new Audio(audioUrl).play();
-      } catch (err) {
+          
+          const audioBlob = await ttsRes.blob();
+          const audioUrl = URL.createObjectURL(audioBlob);
+          console.log("Audio URL created:", audioUrl);
+          
+          const audio = new Audio(audioUrl);
+          audio.onended = () => {
+            console.log("Audio playback ended");
+            URL.revokeObjectURL(audioUrl);
+          };
+          audio.onerror = (e) => {
+            console.error("Audio playback error:", e);
+            URL.revokeObjectURL(audioUrl);
+          };
+          
+          await audio.play();
+          console.log("Audio playback started");
+        } else {
+          console.log("Ghana NLP APIs not configured, using basic speech recognition only");
+          // Fallback: just use the recognized text without translation/TTS
+        }
+        
+      } catch (err: any) {
         console.error("Ghana NLP error:", err);
+        alert(`Error: ${err.message || err}`);
       }
       
       setIsListening(false);
@@ -276,6 +341,83 @@ export default function ChatPage() {
       audio.currentTime = 0;
     });
     setIsSpeaking(false);
+  };
+
+  /* ---------- convert assistant response to local language and audio ---------- */
+  const convertResponseToLocalAudio = async (responseText: string) => {
+    try {
+      console.log("Converting assistant response to local language...");
+      
+      // Step 1: Translate assistant response to Twi
+      const translateRes = await fetch(
+        `${process.env.NEXT_PUBLIC_GHANA_TRANSLATE_URL}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
+            "Ocp-Apim-Subscription-Key": process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN || "",
+          },
+          body: JSON.stringify({
+            in: responseText,
+            lang: "en-tw"
+          }),
+        }
+      );
+
+      if (!translateRes.ok) {
+        throw new Error(`Translation failed: ${translateRes.status}`);
+      }
+
+      const translationData = await translateRes.json();
+      const translatedText = translationData.translatedText || translationData.text || responseText;
+      console.log("Translated response:", translatedText);
+
+      // Step 2: Convert translated text to audio
+      const ttsRes = await fetch(
+        `${process.env.NEXT_PUBLIC_GHANA_TTS_URL}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
+            "Ocp-Apim-Subscription-Key": process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN || "",
+          },
+          body: JSON.stringify({
+            text: translatedText,
+            language: "tw",
+            speaker_id: "twi_speaker_4"
+          }),
+        }
+      );
+
+      if (!ttsRes.ok) {
+        throw new Error(`TTS failed: ${ttsRes.status}`);
+      }
+
+      const audioBlob = await ttsRes.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      const audio = new Audio(audioUrl);
+      audio.onended = () => {
+        console.log("Assistant audio playback ended");
+        URL.revokeObjectURL(audioUrl);
+        setIsSpeaking(false);
+      };
+      audio.onerror = (e) => {
+        console.error("Assistant audio playback error:", e);
+        URL.revokeObjectURL(audioUrl);
+        setIsSpeaking(false);
+      };
+
+      setIsSpeaking(true);
+      await audio.play();
+      console.log("Assistant audio playback started");
+
+    } catch (error: any) {
+      console.error("Error converting response to local audio:", error);
+      alert(`Audio conversion error: ${error.message || error}`);
+    }
   };
 
   return (
@@ -446,7 +588,7 @@ export default function ChatPage() {
                               variant="ghost"
                               size="sm"
                               className="ml-2 p-1 h-8 w-8"
-                              onClick={() => speakText(message.content)}
+                              onClick={() => convertResponseToLocalAudio(message.content)}
                               disabled={isSpeaking}
                             >
                               <Volume2 className="w-4 h-4" />
