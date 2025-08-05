@@ -108,8 +108,7 @@ export default function ChatPage() {
       };
       setMessages((prev) => [...prev, assistantMessage]);
       
-      // Convert assistant response to local language and play audio
-      await convertResponseToLocalAudio(data.answer);
+      // Don't automatically convert to audio - let user click speaker button instead
     } catch (err: any) {
       setMessages((prev) => [
         ...prev,
