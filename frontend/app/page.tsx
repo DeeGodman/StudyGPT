@@ -564,7 +564,7 @@ export default function ChatPage() {
           <Button 
             variant="ghost" 
             className="w-full justify-start gap-3 text-gray-700"
-            onClick={() => window.open('https://github.com/DeeGodman/StudyGPT/tree/gh-pages/SLIDES', '_blank')}
+            onClick={() => window.open('https://github.com/DeeGodman/StudyGPT/tree/c407c99c85ff4b3df154b28bc24703550275472c/SLIDES', '_blank')}
           >
             <Library className="w-4 h-4" /> Library
           </Button>
