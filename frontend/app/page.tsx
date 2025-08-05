@@ -154,14 +154,19 @@ export default function ChatPage() {
       return;
     }
 
-    // Check if Ghana NLP APIs are configured
-    const hasGhanaNLP = process.env.NEXT_PUBLIC_GHANA_TRANSLATE_URL && 
-                        process.env.NEXT_PUBLIC_GHANA_TTS_URL && 
-                        process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN;
-    
-    if (!hasGhanaNLP) {
-      console.warn("Ghana NLP APIs not configured, using basic speech recognition only");
-    }
+          // Check if Ghana NLP APIs are configured
+      const hasGhanaNLP = process.env.NEXT_PUBLIC_GHANA_TRANSLATE_URL && 
+                          process.env.NEXT_PUBLIC_GHANA_TTS_URL && 
+                          process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN;
+      
+      console.log("Ghana NLP Configuration:");
+      console.log("- Translate URL:", process.env.NEXT_PUBLIC_GHANA_TRANSLATE_URL);
+      console.log("- TTS URL:", process.env.NEXT_PUBLIC_GHANA_TTS_URL);
+      console.log("- Token:", process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN ? "Present" : "Missing");
+      
+      if (!hasGhanaNLP) {
+        console.warn("Ghana NLP APIs not configured, using basic speech recognition only");
+      }
 
     setIsListening(true);
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -188,7 +193,7 @@ export default function ChatPage() {
           
           /* ---- Translate English → Twi ---- */
           const trRes = await fetch(
-            `${process.env.NEXT_PUBLIC_GHANA_TRANSLATE_URL}`,
+            "https://translation-api.ghananlp.org/v1/translate",
             {
               method: "POST",
               headers: {
@@ -217,10 +222,9 @@ export default function ChatPage() {
 
           /* ---- Text-to-Speech (Twi) ---- */
           console.log("Starting TTS...");
-          console.log("TTS URL:", process.env.NEXT_PUBLIC_GHANA_TTS_URL);
           
           const ttsRes = await fetch(
-            `${process.env.NEXT_PUBLIC_GHANA_TTS_URL}`,
+            "https://translation-api.ghananlp.org/tts/v1/synthesize",
             {
               method: "POST",
               headers: {
@@ -349,8 +353,10 @@ export default function ChatPage() {
       console.log("Converting assistant response to local language...");
       
       // Step 1: Translate assistant response to Twi
+      console.log("Translation payload:", { in: responseText, lang: "en-tw" });
+      
       const translateRes = await fetch(
-        `${process.env.NEXT_PUBLIC_GHANA_TRANSLATE_URL}`,
+        "https://translation-api.ghananlp.org/v1/translate",
         {
           method: "POST",
           headers: {
@@ -375,7 +381,7 @@ export default function ChatPage() {
 
       // Step 2: Convert translated text to audio
       const ttsRes = await fetch(
-        `${process.env.NEXT_PUBLIC_GHANA_TTS_URL}`,
+        "https://translation-api.ghananlp.org/tts/v1/synthesize",
         {
           method: "POST",
           headers: {
@@ -416,7 +422,19 @@ export default function ChatPage() {
 
     } catch (error: any) {
       console.error("Error converting response to local audio:", error);
-      alert(`Audio conversion error: ${error.message || error}`);
+      
+      // Fallback: Try using browser's built-in speech synthesis
+      try {
+        console.log("Trying fallback speech synthesis...");
+        const utterance = new SpeechSynthesisUtterance(responseText);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.9;
+        speechSynthesis.speak(utterance);
+        console.log("Fallback speech synthesis started");
+      } catch (fallbackError) {
+        console.error("Fallback speech synthesis failed:", fallbackError);
+        alert(`Audio conversion error: ${error.message || error}`);
+      }
     }
   };
 
