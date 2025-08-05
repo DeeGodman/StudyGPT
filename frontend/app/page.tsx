@@ -7,7 +7,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquarePlus, Settings, Library, Share, ChevronDown, Send, ImageIcon, FileText, Calendar, Code, MoreHorizontal, Menu, BookOpen, Target, Lightbulb, NotebookPen, Bookmark, HelpCircle, Clock, CheckCircle, Mic } from "lucide-react";
+import { MessageSquarePlus, Settings, Library, Share, ChevronDown, Send, ImageIcon, FileText, Calendar, Code, MoreHorizontal, Menu, BookOpen, Target, Lightbulb, NotebookPen, Bookmark, HelpCircle, Clock, CheckCircle, Mic, Volume2 } from "lucide-react";
+
+// Type declarations for speech recognition
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
 
 interface Message {
   id: string;
@@ -25,6 +33,8 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentTopic, setCurrentTopic] = useState("");
   const [showSettings, setShowSettings] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const chatHistory = [
     "Software Architecture Assistance",
@@ -132,6 +142,140 @@ export default function ChatPage() {
   /* ---------- settings functionality ---------- */
   const handleSettings = () => {
     setShowSettings(!showSettings);
+  };
+
+  /* ---------- speech recognition functionality ---------- */
+  const handleMic = async () => {
+    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
+      alert("Speech not supported");
+      return;
+    }
+
+    setIsListening(true);
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const rec = new SpeechRecognition();
+    rec.lang = "en-US";
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+
+    rec.onresult = async (e: any) => {
+      const text = e.results[0][0].transcript.trim();
+      setInputValue(text);
+
+      try {
+        /* ---- Translate English → Twi ---- */
+        const trRes = await fetch(
+          `${process.env.NEXT_PUBLIC_GHANA_TRANSLATE_URL}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN}`,
+            },
+            body: JSON.stringify({
+              in: "en",
+              out: "tw", // change to "ewe", "ga", etc.
+              text,
+            }),
+          }
+        );
+        const { translatedText } = await trRes.json();
+
+        /* ---- Text-to-Speech (Twi) ---- */
+        const ttsRes = await fetch(
+          `${process.env.NEXT_PUBLIC_GHANA_TTS_URL}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN}`,
+            },
+            body: JSON.stringify({
+              text: translatedText,
+              lang: "tw", // same language code you used above
+            }),
+          }
+        );
+        const audioBlob = await ttsRes.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        new Audio(audioUrl).play();
+      } catch (err) {
+        console.error("Ghana NLP error:", err);
+      }
+      
+      setIsListening(false);
+    };
+
+    rec.onerror = (err: any) => {
+      console.error("Speech recognition error:", err);
+      setIsListening(false);
+    };
+
+    rec.onend = () => {
+      setIsListening(false);
+    };
+
+    rec.start();
+  };
+
+
+
+  /* ---------- text-to-speech functionality ---------- */
+  const speakText = async (text: string) => {
+    try {
+      setIsSpeaking(true);
+      
+      // Call your text-to-speech API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_TTS_API_URL || 'https://your-tts-api.com/synthesize'}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_TTS_API_KEY || ''}`
+        },
+        body: JSON.stringify({
+          text: text,
+          language: 'tw', // Twi language
+          voice: 'female', // or 'male'
+          speed: 1.0
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`TTS API error: ${response.status}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        alert('Audio playback error');
+      };
+
+      await audio.play();
+    } catch (error) {
+      console.error('Text-to-speech error:', error);
+      setIsSpeaking(false);
+      alert('Text-to-speech error: ' + error);
+    }
+  };
+
+  /* ---------- stop speaking functionality ---------- */
+  const stopSpeaking = () => {
+    // Stop any currently playing audio
+    const audioElements = document.querySelectorAll('audio');
+    audioElements.forEach(audio => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+    setIsSpeaking(false);
   };
 
   return (
@@ -260,7 +404,15 @@ export default function ChatPage() {
                     <Input value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="" className="w-full py-4 px-4 pr-24 text-lg rounded-3xl border-gray-300 shadow-sm" disabled={isLoading}/>
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                       <Button variant="ghost" size="sm" type="button" className="p-2"><Menu className="w-5 h-5 text-gray-500" /></Button>
-                      <Button variant="ghost" size="sm" type="button" className="p-2"><Mic className="w-5 h-5 text-gray-500" /></Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        type="button"
+                        className="p-2"
+                        onClick={handleMic}
+                      >
+                        <Mic className="w-5 h-5 text-gray-500" />
+                      </Button>
                       <Button variant="ghost" size="sm" type="submit" disabled={isLoading} className="p-2"><Send className="w-5 h-5 text-gray-700" /></Button>
                     </div>
                   </form>
@@ -286,9 +438,22 @@ export default function ChatPage() {
                     )}
                     <div className={`max-w-3xl ${message.type === "user" ? "order-1" : "order-2"}`}>
                       <Card className={`${message.type === "user" ? "bg-blue-500 text-white" : "bg-gray-50"}`}>
-                        <CardContent className="p-4">
-                          <div className="whitespace-pre-wrap">{message.content}</div>
-                          {message.type === "assistant" && message.topic && (
+                                              <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="whitespace-pre-wrap flex-1">{message.content}</div>
+                          {message.type === "assistant" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="ml-2 p-1 h-8 w-8"
+                              onClick={() => speakText(message.content)}
+                              disabled={isSpeaking}
+                            >
+                              <Volume2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                        {message.type === "assistant" && message.topic && (
                             <div className="mt-4 space-y-3">
                               <div className="flex items-center gap-2">
                                 <Badge variant="secondary" className="text-xs">
@@ -358,7 +523,15 @@ export default function ChatPage() {
                 <Input value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Ask a follow-up question or explore a new topic..." className="w-full py-4 px-4 pr-24 text-lg rounded-3xl border-gray-300 shadow-sm bg-white" disabled={isLoading}/>
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                   <Button variant="ghost" size="sm" type="button" className="p-2"><Menu className="w-5 h-5 text-gray-500" /></Button>
-                  <Button variant="ghost" size="sm" type="button" className="p-2"><Mic className="w-5 h-5 text-gray-500" /></Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    type="button"
+                    className="p-2"
+                    onClick={handleMic}
+                  >
+                    <Mic className="w-5 h-5 text-gray-500" />
+                  </Button>
                   <Button variant="ghost" size="sm" type="submit" disabled={isLoading} className="p-2"><Send className="w-5 h-5 text-gray-700" /></Button>
                 </div>
               </form>
