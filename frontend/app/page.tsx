@@ -35,6 +35,7 @@ export default function ChatPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [preferredLanguage, setPreferredLanguage] = useState("en"); // en, tw, ewe, ga
 
   const chatHistory = [
     "Software Architecture Assistance",
@@ -86,12 +87,18 @@ export default function ChatPage() {
     if (messages.length === 0) setCurrentTopic(getTopicFromQuery(currentInput));
 
     try {
+      // Add language preference to the request
+      const requestBody = {
+        question: currentInput,
+        language: preferredLanguage !== "en" ? preferredLanguage : undefined
+      };
+
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL || "https://studygpt-7gg2.onrender.com"}/query`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: currentInput }),
+          body: JSON.stringify(requestBody),
         }
       );
       if (!res.ok) throw new Error(`Backend error: ${res.status}`);
@@ -146,6 +153,26 @@ export default function ChatPage() {
     setShowSettings(!showSettings);
   };
 
+  /* ---------- language change functionality ---------- */
+  const handleLanguageChange = (language: string) => {
+    setPreferredLanguage(language);
+    const languageNames = {
+      en: "English",
+      tw: "Twi",
+      ewe: "Ewe", 
+      ga: "Ga"
+    };
+    
+    // Add a system message to inform the user
+    const systemMessage: Message = {
+      id: Date.now().toString(),
+      type: "assistant",
+      content: `Language changed to ${languageNames[language as keyof typeof languageNames]}. I will now respond in ${languageNames[language as keyof typeof languageNames]}.`,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, systemMessage]);
+  };
+
   /* ---------- speech recognition functionality ---------- */
   const handleMic = async () => {
     if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
@@ -192,7 +219,7 @@ export default function ChatPage() {
           
           /* ---- Translate English → Twi ---- */
           const trRes = await fetch(
-            "https://translation-api.ghananlp.org/v1/translate",
+            "https://translation.ghananlp.org/translate",
             {
               method: "POST",
               headers: {
@@ -223,7 +250,7 @@ export default function ChatPage() {
           console.log("Starting TTS...");
           
           const ttsRes = await fetch(
-            "https://translation-api.ghananlp.org/tts/v1/synthesize",
+            "https://translation.ghananlp.org/synthesize",
             {
               method: "POST",
               headers: {
@@ -355,7 +382,7 @@ export default function ChatPage() {
       console.log("Translation payload:", { in: responseText, lang: "en-tw" });
       
       const translateRes = await fetch(
-        "https://translation-api.ghananlp.org/v1/translate",
+        "https://translation.ghananlp.org/translate",
         {
           method: "POST",
           headers: {
@@ -380,7 +407,7 @@ export default function ChatPage() {
 
       // Step 2: Convert translated text to audio
       const ttsRes = await fetch(
-        "https://translation-api.ghananlp.org/tts/v1/synthesize",
+        "https://translation.ghananlp.org/synthesize",
         {
           method: "POST",
           headers: {
@@ -467,6 +494,39 @@ export default function ChatPage() {
                 </div>
               </div>
               <div>
+                <h3 className="font-medium mb-2">Response Language</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant={preferredLanguage === "en" ? "default" : "outline"} 
+                    size="sm" 
+                    onClick={() => handleLanguageChange("en")}
+                  >
+                    English
+                  </Button>
+                  <Button 
+                    variant={preferredLanguage === "tw" ? "default" : "outline"} 
+                    size="sm" 
+                    onClick={() => handleLanguageChange("tw")}
+                  >
+                    Twi
+                  </Button>
+                  <Button 
+                    variant={preferredLanguage === "ewe" ? "default" : "outline"} 
+                    size="sm" 
+                    onClick={() => handleLanguageChange("ewe")}
+                  >
+                    Ewe
+                  </Button>
+                  <Button 
+                    variant={preferredLanguage === "ga" ? "default" : "outline"} 
+                    size="sm" 
+                    onClick={() => handleLanguageChange("ga")}
+                  >
+                    Ga
+                  </Button>
+                </div>
+              </div>
+              <div>
                 <h3 className="font-medium mb-2">Chat History</h3>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1">Save</Button>
@@ -501,7 +561,11 @@ export default function ChatPage() {
           <Button variant="ghost" className="w-full justify-start gap-3 text-gray-700" onClick={handleSettings}>
             <Settings className="w-4 h-4" /> Settings
           </Button>
-          <Button variant="ghost" className="w-full justify-start gap-3 text-gray-700">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start gap-3 text-gray-700"
+            onClick={() => window.open('https://github.com/DeeGodman/StudyGPT/tree/gh-pages/SLIDES', '_blank')}
+          >
             <Library className="w-4 h-4" /> Library
           </Button>
         </div>
@@ -538,6 +602,13 @@ export default function ChatPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-medium">StudyGPT</h1>
             <ChevronDown className="w-4 h-4 text-gray-500" />
+            {preferredLanguage !== "en" && (
+              <Badge variant="secondary" className="text-xs">
+                {preferredLanguage === "tw" ? "Twi" : 
+                 preferredLanguage === "ewe" ? "Ewe" : 
+                 preferredLanguage === "ga" ? "Ga" : preferredLanguage}
+              </Badge>
+            )}
           </div>
           {messages.length > 0 && (
             <div className="flex items-center gap-2">
