@@ -3,7 +3,9 @@ from pydantic import BaseModel
 from openai import OpenAI
 import os
 from fastapi.middleware.cors import CORSMiddleware
-from .query_route import router  # adjust import path if needed
+from .query_route import router as query_router  # adjust import path if needed
+from .tts_route import router as tts_router
+from .translation_route import router as translation_router
 
 app = FastAPI()
 
@@ -16,7 +18,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router)
+app.include_router(query_router)
+app.include_router(tts_router)
+app.include_router(translation_router)
 
 # Initialize OpenAI client
 client = OpenAI()  # pulls OPENAI_API_KEY from env

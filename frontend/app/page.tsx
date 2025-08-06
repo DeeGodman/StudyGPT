@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { MessageSquarePlus, Settings, Library, Share, ChevronDown, Send, ImageIcon, FileText, Calendar, Code, MoreHorizontal, Menu, BookOpen, Target, Lightbulb, NotebookPen, Bookmark, HelpCircle, Clock, CheckCircle, Mic, Volume2, VolumeX } from "lucide-react";
+import { BookOpen, Calendar, CheckCircle, ChevronDown, Clock, Code, FileText, ImageIcon, Library, Menu, MessageSquarePlus, Mic, MoreHorizontal, Send, Settings, Share, Target, Volume2, VolumeX } from "lucide-react";
+import { useState } from "react";
 
 // Type declarations for speech recognition
 declare global {
@@ -329,180 +329,50 @@ export default function ChatPage() {
 
 
 
+
   /* ---------- text-to-speech functionality ---------- */
-  const speakText = async (text: string) => {
-    try {
-      setIsSpeaking(true);
-      
-      // Call your text-to-speech API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_TTS_API_URL || 'https://your-tts-api.com/synthesize'}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_TTS_API_KEY || ''}`
-        },
-        body: JSON.stringify({
-          text: text,
-          language: 'tw', // Twi language
-          voice: 'female', // or 'male'
-          speed: 1.0
-        })
-      });
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://studygpt-7gg2.onrender.com";
 
-      if (!response.ok) {
-        throw new Error(`TTS API error: ${response.status}`);
-      }
-
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      
-      audio.onended = () => {
-        setIsSpeaking(false);
-        URL.revokeObjectURL(audioUrl);
-      };
-
-      audio.onerror = () => {
-        setIsSpeaking(false);
-        URL.revokeObjectURL(audioUrl);
-        alert('Audio playback error');
-      };
-
-      await audio.play();
-    } catch (error) {
-      console.error('Text-to-speech error:', error);
-      setIsSpeaking(false);
-      alert('Text-to-speech error: ' + error);
-    }
-  };
-
-  /* ---------- stop speaking functionality ---------- */
-  const stopSpeaking = () => {
-    if (currentAudio) {
+  const playTTS = async (text: string, lang: string) => {
+    // If already speaking, stop the current audio
+    if (isSpeaking && currentAudio) {
       currentAudio.pause();
       currentAudio.currentTime = 0;
       setCurrentAudio(null);
-    }
-    setIsSpeaking(false);
-  };
-
-  /* ---------- get speaker ID based on language ---------- */
-  const getSpeakerId = (language: string) => {
-    const speakerMap = {
-      tw: "twi_speaker_4",
-      ki: "kikuyu_speaker_1", 
-      ee: "ewe_speaker_3"
-    };
-    return speakerMap[language as keyof typeof speakerMap] || "twi_speaker_4";
-  };
-
-  /* ---------- convert assistant response to local language and audio ---------- */
-  const convertResponseToLocalAudio = async (responseText: string) => {
-    // If already speaking, stop the current audio
-    if (isSpeaking && currentAudio) {
-      stopSpeaking();
-      return;
+      setIsSpeaking(false);
     }
 
     try {
-      console.log("Converting assistant response to local language...");
+      const res = await fetch(`${BACKEND_URL}/tts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, lang }),
+      });
+      if (!res.ok) throw new Error(`TTS failed: ${res.status}`);
+      const blob = await res.blob();
+      const audio = new Audio(URL.createObjectURL(blob));
       
-      // Determine target language based on selected preference
-      const targetLanguage = preferredLanguage === "en" ? "tw" : preferredLanguage; // Default to Twi if English is selected
-      const langPair = `en-${targetLanguage}`;
-      
-      console.log("Translation payload:", { in: responseText, lang: langPair });
-      
-      const translateRes = await fetch(
-        "https://translation-api.ghananlp.org/v1/translate",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Cache-Control": "no-cache",
-            "Ocp-Apim-Subscription-Key": process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN || "",
-          },
-          body: JSON.stringify({
-            in: responseText,
-            lang: langPair
-          }),
-        }
-      );
-
-      if (!translateRes.ok) {
-        throw new Error(`Translation failed: ${translateRes.status}`);
-      }
-
-      const translationData = await translateRes.json();
-      const translatedText = translationData.translatedText || translationData.text || responseText;
-      console.log("Translated response:", translatedText);
-
-      // Step 2: Convert translated text to audio
-      const ttsRes = await fetch(
-        "https://translation-api.ghananlp.org/tts/v1/synthesize",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Cache-Control": "no-cache",
-            "Ocp-Apim-Subscription-Key": process.env.NEXT_PUBLIC_GHANA_NLP_TOKEN || "",
-          },
-          body: JSON.stringify({
-            text: translatedText,
-            language: targetLanguage,
-            speaker_id: (() => {
-              const speakerMap = {
-                tw: "twi_speaker_4",
-                ki: "kikuyu_speaker_1", 
-                ee: "ewe_speaker_3"
-              };
-              return speakerMap[targetLanguage as keyof typeof speakerMap] || "twi_speaker_4";
-            })()
-          }),
-        }
-      );
-
-      if (!ttsRes.ok) {
-        throw new Error(`TTS failed: ${ttsRes.status}`);
-      }
-
-      const audioBlob = await ttsRes.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      
-      const audio = new Audio(audioUrl);
       audio.onended = () => {
-        console.log("Assistant audio playback ended");
-        URL.revokeObjectURL(audioUrl);
+        URL.revokeObjectURL(audio.src);
         setIsSpeaking(false);
         setCurrentAudio(null);
       };
+      
       audio.onerror = (e) => {
-        console.error("Assistant audio playback error:", e);
-        URL.revokeObjectURL(audioUrl);
+        console.error("Audio playback error:", e);
+        URL.revokeObjectURL(audio.src);
         setIsSpeaking(false);
         setCurrentAudio(null);
       };
-
+      
       setIsSpeaking(true);
       setCurrentAudio(audio);
       await audio.play();
-      console.log("Assistant audio playback started");
-
-    } catch (error: any) {
-      console.error("Error converting response to local audio:", error);
-      
-      // Fallback: Try using browser's built-in speech synthesis
-      try {
-        console.log("Trying fallback speech synthesis...");
-        const utterance = new SpeechSynthesisUtterance(responseText);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.9;
-        speechSynthesis.speak(utterance);
-        console.log("Fallback speech synthesis started");
-      } catch (fallbackError) {
-        console.error("Fallback speech synthesis failed:", fallbackError);
-        alert(`Audio conversion error: ${error.message || error}`);
-      }
+    } catch (error) {
+      console.error("TTS error:", error);
+      setIsSpeaking(false);
+      setCurrentAudio(null);
+      alert(`TTS error: ${error}`);
     }
   };
 
@@ -739,7 +609,7 @@ export default function ChatPage() {
                               variant="ghost"
                               size="sm"
                               className={`ml-2 p-1 h-8 w-8 ${isSpeaking ? 'bg-red-100 text-red-600' : ''}`}
-                              onClick={() => convertResponseToLocalAudio(message.content)}
+                              onClick={() => playTTS(message.content, preferredLanguage === "en" ? "tw" : preferredLanguage)}
                             >
                               {isSpeaking ? (
                                 <VolumeX className="w-4 h-4" />
