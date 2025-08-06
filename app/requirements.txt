@@ -5,5 +5,5 @@ pydantic
 python-dotenv
 pinecone
 ghana-nlp
-httpx
+requests
 

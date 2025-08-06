@@ -333,7 +333,23 @@ export default function ChatPage() {
   /* ---------- text-to-speech functionality ---------- */
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://studygpt-7gg2.onrender.com";
 
-  const playTTS = async (text: string, lang: string) => {
+  const getSpeakerId = (language: string): string => {
+    const speakerMap: Record<string, string> = {
+      "tw": "twi_speaker_4",     // Twi
+      "gaa": "ga_speaker_1",    // Ga
+      "ee": "ewe_speaker_3",    // Ewe
+      "fat": "fante_speaker_1", // Fante
+      "dag": "dagbani_speaker_1", // Dagbani
+      "gur": "gurene_speaker_1",  // Gurene
+      "yo": "yoruba_speaker_1",   // Yoruba
+      "ki": "kikuyu_speaker_1",   // Kikuyu
+      "luo": "luo_speaker_1",     // Luo
+      "mer": "kimeru_speaker_1"   // Kimeru
+    };
+    return speakerMap[language] || "twi_speaker_4";  // Default to Twi speaker
+  };
+
+  const playTTS = async (text: string, language: string = "tw", speakerId: string = "twi_speaker_4") => {
     // If already speaking, stop the current audio
     if (isSpeaking && currentAudio) {
       currentAudio.pause();
@@ -343,58 +359,21 @@ export default function ChatPage() {
     }
 
     try {
-      // If the language is English, we don't need to translate
-      let textToSpeak = text;
-      if (lang !== "en") {
-        console.log(`Sending translation request to ${BACKEND_URL}/translate`);
-        console.log("Translation payload:", { text, source_lang: "en", target_lang: lang });
-        
-        // First translate the text
-        const translateRes = await fetch(`${BACKEND_URL}/translate`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ text, source_lang: "en", target_lang: lang }),
-        });
-        
-        console.log("Translation response status:", translateRes.status);
-        
-        if (!translateRes.ok) {
-          const errorText = await translateRes.text();
-          throw new Error(`Translation failed: ${translateRes.status} - ${errorText}`);
-        }
-        
-        const translationData = await translateRes.json();
-        textToSpeak = translationData.translated_text || text;
-        console.log("Translated text:", textToSpeak);
-      }
-      
-      console.log(`Sending TTS request to ${BACKEND_URL}/tts`);
-      console.log("TTS payload:", { text: textToSpeak, lang });
-      
-      // Then convert to speech
-      const ttsRes = await fetch(`${BACKEND_URL}/tts`, {
+      const res = await fetch(`${BACKEND_URL}/tts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text: textToSpeak, lang }),
+        body: JSON.stringify({ text, language, speaker_id: speakerId }),
       });
-      
-      console.log("TTS response status:", ttsRes.status);
-      
-      if (!ttsRes.ok) {
-        const errorText = await ttsRes.text();
-        throw new Error(`TTS failed: ${ttsRes.status} - ${errorText}`);
-      }
-      
-      const blob = await ttsRes.blob();
-      const audioUrl = URL.createObjectURL(blob);
+
+      if (!res.ok) throw new Error("TTS failed");
+
+      const audioBlob = await res.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
       
       audio.onended = () => {
-        console.log("Audio playback ended");
         URL.revokeObjectURL(audioUrl);
         setIsSpeaking(false);
         setCurrentAudio(null);
@@ -405,18 +384,15 @@ export default function ChatPage() {
         URL.revokeObjectURL(audioUrl);
         setIsSpeaking(false);
         setCurrentAudio(null);
-        alert("Audio playback error occurred");
       };
       
       setIsSpeaking(true);
       setCurrentAudio(audio);
       await audio.play();
-      console.log("Audio playback started");
-    } catch (error: any) {
-      console.error("TTS error:", error);
+    } catch (err) {
+      console.error("TTS error:", err);
       setIsSpeaking(false);
       setCurrentAudio(null);
-      alert(`TTS error: ${error.message || error}`);
     }
   };
 
@@ -653,7 +629,11 @@ export default function ChatPage() {
                               variant="ghost"
                               size="sm"
                               className={`ml-2 p-1 h-8 w-8 ${isSpeaking ? 'bg-red-100 text-red-600' : ''}`}
-                              onClick={() => playTTS(message.content, preferredLanguage === "en" ? "tw" : preferredLanguage)}
+                              onClick={() => {
+                                const language = preferredLanguage === "en" ? "tw" : preferredLanguage;
+                                const speakerId = getSpeakerId(language);
+                                playTTS(message.content, language, speakerId);
+                              }}
                             >
                               {isSpeaking ? (
                                 <VolumeX className="w-4 h-4" />
