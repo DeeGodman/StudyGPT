@@ -35,7 +35,7 @@ export default function ChatPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [preferredLanguage, setPreferredLanguage] = useState("en"); // en, tw, ewe, ga
+  const [preferredLanguage, setPreferredLanguage] = useState("en"); // en, tw, gaa, ee, fat, dag, gur, yo, ki, luo, mer
 
   const chatHistory = [
     "Software Architecture Assistance",
@@ -159,8 +159,15 @@ export default function ChatPage() {
     const languageNames = {
       en: "English",
       tw: "Twi",
-      ewe: "Ewe", 
-      ga: "Ga"
+      gaa: "Ga",
+      ee: "Ewe",
+      fat: "Fante",
+      dag: "Dagbani",
+      gur: "Gurene",
+      yo: "Yoruba",
+      ki: "Kikuyu",
+      luo: "Luo",
+      mer: "Kimeru"
     };
     
     // Add a system message to inform the user
@@ -219,7 +226,7 @@ export default function ChatPage() {
           
           /* ---- Translate English → Twi ---- */
           const trRes = await fetch(
-            "https://translation.ghananlp.org/translate",
+            "https://translation-api.ghananlp.org/v1/translate",
             {
               method: "POST",
               headers: {
@@ -250,7 +257,7 @@ export default function ChatPage() {
           console.log("Starting TTS...");
           
           const ttsRes = await fetch(
-            "https://translation.ghananlp.org/synthesize",
+            "https://translation-api.ghananlp.org/tts/v1/synthesize",
             {
               method: "POST",
               headers: {
@@ -382,7 +389,7 @@ export default function ChatPage() {
       console.log("Translation payload:", { in: responseText, lang: "en-tw" });
       
       const translateRes = await fetch(
-        "https://translation.ghananlp.org/translate",
+        "https://translation-api.ghananlp.org/v1/translate",
         {
           method: "POST",
           headers: {
@@ -407,7 +414,7 @@ export default function ChatPage() {
 
       // Step 2: Convert translated text to audio
       const ttsRes = await fetch(
-        "https://translation.ghananlp.org/synthesize",
+        "https://translation-api.ghananlp.org/tts/v1/synthesize",
         {
           method: "POST",
           headers: {
@@ -495,7 +502,7 @@ export default function ChatPage() {
               </div>
               <div>
                 <h3 className="font-medium mb-2">Response Language</h3>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <Button 
                     variant={preferredLanguage === "en" ? "default" : "outline"} 
                     size="sm" 
@@ -511,18 +518,32 @@ export default function ChatPage() {
                     Twi
                   </Button>
                   <Button 
-                    variant={preferredLanguage === "ewe" ? "default" : "outline"} 
+                    variant={preferredLanguage === "gaa" ? "default" : "outline"} 
                     size="sm" 
-                    onClick={() => handleLanguageChange("ewe")}
+                    onClick={() => handleLanguageChange("gaa")}
+                  >
+                    Ga
+                  </Button>
+                  <Button 
+                    variant={preferredLanguage === "ee" ? "default" : "outline"} 
+                    size="sm" 
+                    onClick={() => handleLanguageChange("ee")}
                   >
                     Ewe
                   </Button>
                   <Button 
-                    variant={preferredLanguage === "ga" ? "default" : "outline"} 
+                    variant={preferredLanguage === "fat" ? "default" : "outline"} 
                     size="sm" 
-                    onClick={() => handleLanguageChange("ga")}
+                    onClick={() => handleLanguageChange("fat")}
                   >
-                    Ga
+                    Fante
+                  </Button>
+                  <Button 
+                    variant={preferredLanguage === "dag" ? "default" : "outline"} 
+                    size="sm" 
+                    onClick={() => handleLanguageChange("dag")}
+                  >
+                    Dagbani
                   </Button>
                 </div>
               </div>
@@ -605,8 +626,15 @@ export default function ChatPage() {
             {preferredLanguage !== "en" && (
               <Badge variant="secondary" className="text-xs">
                 {preferredLanguage === "tw" ? "Twi" : 
-                 preferredLanguage === "ewe" ? "Ewe" : 
-                 preferredLanguage === "ga" ? "Ga" : preferredLanguage}
+                 preferredLanguage === "gaa" ? "Ga" : 
+                 preferredLanguage === "ee" ? "Ewe" : 
+                 preferredLanguage === "fat" ? "Fante" : 
+                 preferredLanguage === "dag" ? "Dagbani" : 
+                 preferredLanguage === "gur" ? "Gurene" : 
+                 preferredLanguage === "yo" ? "Yoruba" : 
+                 preferredLanguage === "ki" ? "Kikuyu" : 
+                 preferredLanguage === "luo" ? "Luo" : 
+                 preferredLanguage === "mer" ? "Kimeru" : preferredLanguage}
               </Badge>
             )}
           </div>
