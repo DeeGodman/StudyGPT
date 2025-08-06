@@ -343,36 +343,80 @@ export default function ChatPage() {
     }
 
     try {
-      const res = await fetch(`${BACKEND_URL}/tts`, {
+      // If the language is English, we don't need to translate
+      let textToSpeak = text;
+      if (lang !== "en") {
+        console.log(`Sending translation request to ${BACKEND_URL}/translate`);
+        console.log("Translation payload:", { text, source_lang: "en", target_lang: lang });
+        
+        // First translate the text
+        const translateRes = await fetch(`${BACKEND_URL}/translate`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text, source_lang: "en", target_lang: lang }),
+        });
+        
+        console.log("Translation response status:", translateRes.status);
+        
+        if (!translateRes.ok) {
+          const errorText = await translateRes.text();
+          throw new Error(`Translation failed: ${translateRes.status} - ${errorText}`);
+        }
+        
+        const translationData = await translateRes.json();
+        textToSpeak = translationData.translated_text || text;
+        console.log("Translated text:", textToSpeak);
+      }
+      
+      console.log(`Sending TTS request to ${BACKEND_URL}/tts`);
+      console.log("TTS payload:", { text: textToSpeak, lang });
+      
+      // Then convert to speech
+      const ttsRes = await fetch(`${BACKEND_URL}/tts`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, lang }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: textToSpeak, lang }),
       });
-      if (!res.ok) throw new Error(`TTS failed: ${res.status}`);
-      const blob = await res.blob();
-      const audio = new Audio(URL.createObjectURL(blob));
+      
+      console.log("TTS response status:", ttsRes.status);
+      
+      if (!ttsRes.ok) {
+        const errorText = await ttsRes.text();
+        throw new Error(`TTS failed: ${ttsRes.status} - ${errorText}`);
+      }
+      
+      const blob = await ttsRes.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      const audio = new Audio(audioUrl);
       
       audio.onended = () => {
-        URL.revokeObjectURL(audio.src);
+        console.log("Audio playback ended");
+        URL.revokeObjectURL(audioUrl);
         setIsSpeaking(false);
         setCurrentAudio(null);
       };
       
       audio.onerror = (e) => {
         console.error("Audio playback error:", e);
-        URL.revokeObjectURL(audio.src);
+        URL.revokeObjectURL(audioUrl);
         setIsSpeaking(false);
         setCurrentAudio(null);
+        alert("Audio playback error occurred");
       };
       
       setIsSpeaking(true);
       setCurrentAudio(audio);
       await audio.play();
-    } catch (error) {
+      console.log("Audio playback started");
+    } catch (error: any) {
       console.error("TTS error:", error);
       setIsSpeaking(false);
       setCurrentAudio(null);
-      alert(`TTS error: ${error}`);
+      alert(`TTS error: ${error.message || error}`);
     }
   };
 

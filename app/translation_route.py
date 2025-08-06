@@ -1,10 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import os
-from ghana_nlp import GhanaNLP
+import httpx
 
 router = APIRouter()
-GH_API = GhanaNLP(api_key=os.getenv("GHANANLP_API_KEY"))
+
+# Ghana NLP API configuration
+api_key = os.getenv("GHANANLP_API_KEY")
+translation_url = "https://translation-api.ghananlp.org/v1/translate"
 
 class TranslationRequest(BaseModel):
     text: str
@@ -13,17 +16,43 @@ class TranslationRequest(BaseModel):
 
 @router.post("/translate")
 async def translate_text(req: TranslationRequest):
+    # Check if API key is properly configured
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GHANANLP_API_KEY not found in environment variables")
+    
+    # Headers for Ghana NLP API
+    headers = {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache",
+        "Ocp-Apim-Subscription-Key": api_key
+    }
+    
+    # Create language pair in format expected by Ghana NLP API
+    lang_pair = f"{req.source_lang}-{req.target_lang}"
+    
+    # Payload for translation request
+    payload = {
+        "in": req.text,
+        "lang": lang_pair
+    }
+    
     try:
-        # Create language pair in format expected by Ghana NLP API
-        lang_pair = f"{req.source_lang}-{req.target_lang}"
+        async with httpx.AsyncClient() as client:
+            response = await client.post(translation_url, json=payload, headers=headers)
+            
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=f"Translation API error: {response.text}")
         
-        # Perform translation using Ghana NLP library
-        translated_text = GH_API.translate(req.text, lang=lang_pair)
+        # Parse the response
+        response_data = response.json()
+        translated_text = response_data.get("translatedText") or response_data.get("text") or req.text
         
         return {
             "translated_text": translated_text,
             "source_lang": req.source_lang,
             "target_lang": req.target_lang
         }
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=500, detail=f"Network error during translation request: {str(e)}")
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
