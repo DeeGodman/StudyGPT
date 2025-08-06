@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquarePlus, Settings, Library, Share, ChevronDown, Send, ImageIcon, FileText, Calendar, Code, MoreHorizontal, Menu, BookOpen, Target, Lightbulb, NotebookPen, Bookmark, HelpCircle, Clock, CheckCircle, Mic, Volume2 } from "lucide-react";
+import { MessageSquarePlus, Settings, Library, Share, ChevronDown, Send, ImageIcon, FileText, Calendar, Code, MoreHorizontal, Menu, BookOpen, Target, Lightbulb, NotebookPen, Bookmark, HelpCircle, Clock, CheckCircle, Mic, Volume2, VolumeX } from "lucide-react";
 
 // Type declarations for speech recognition
 declare global {
@@ -25,6 +25,8 @@ interface Message {
   topic?: string;
   keyPoints?: string[];
   difficulty?: "Beginner" | "Intermediate" | "Advanced";
+  sources?: string[];
+  sourceFiles?: string[];
 }
 
 export default function ChatPage() {
@@ -36,6 +38,7 @@ export default function ChatPage() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [preferredLanguage, setPreferredLanguage] = useState("en"); // en, tw, gaa, ee, fat, dag, gur, yo, ki, luo, mer
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
 
   const chatHistory = [
     "Software Architecture Assistance",
@@ -87,10 +90,12 @@ export default function ChatPage() {
     if (messages.length === 0) setCurrentTopic(getTopicFromQuery(currentInput));
 
     try {
-      // Add language preference to the request
+      // Add language preference and source material request to the request
       const requestBody = {
         question: currentInput,
-        language: preferredLanguage !== "en" ? preferredLanguage : undefined
+        language: preferredLanguage !== "en" ? preferredLanguage : undefined,
+        includeSources: true,
+        format: "with_sources"
       };
 
       const res = await fetch(
@@ -112,6 +117,8 @@ export default function ChatPage() {
         topic: getTopicFromQuery(currentInput),
         keyPoints: getKeyPointsForQuery(currentInput),
         difficulty: getDifficultyForQuery(currentInput),
+        sources: data.sources || [],
+        sourceFiles: data.sourceFiles || [],
       };
       setMessages((prev) => [...prev, assistantMessage]);
       
@@ -371,22 +378,40 @@ export default function ChatPage() {
 
   /* ---------- stop speaking functionality ---------- */
   const stopSpeaking = () => {
-    // Stop any currently playing audio
-    const audioElements = document.querySelectorAll('audio');
-    audioElements.forEach(audio => {
-      audio.pause();
-      audio.currentTime = 0;
-    });
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      setCurrentAudio(null);
+    }
     setIsSpeaking(false);
+  };
+
+  /* ---------- get speaker ID based on language ---------- */
+  const getSpeakerId = (language: string) => {
+    const speakerMap = {
+      tw: "twi_speaker_4",
+      ki: "kikuyu_speaker_1", 
+      ee: "ewe_speaker_3"
+    };
+    return speakerMap[language as keyof typeof speakerMap] || "twi_speaker_4";
   };
 
   /* ---------- convert assistant response to local language and audio ---------- */
   const convertResponseToLocalAudio = async (responseText: string) => {
+    // If already speaking, stop the current audio
+    if (isSpeaking && currentAudio) {
+      stopSpeaking();
+      return;
+    }
+
     try {
       console.log("Converting assistant response to local language...");
       
-      // Step 1: Translate assistant response to Twi
-      console.log("Translation payload:", { in: responseText, lang: "en-tw" });
+      // Determine target language based on selected preference
+      const targetLanguage = preferredLanguage === "en" ? "tw" : preferredLanguage; // Default to Twi if English is selected
+      const langPair = `en-${targetLanguage}`;
+      
+      console.log("Translation payload:", { in: responseText, lang: langPair });
       
       const translateRes = await fetch(
         "https://translation-api.ghananlp.org/v1/translate",
@@ -399,7 +424,7 @@ export default function ChatPage() {
           },
           body: JSON.stringify({
             in: responseText,
-            lang: "en-tw"
+            lang: langPair
           }),
         }
       );
@@ -424,8 +449,15 @@ export default function ChatPage() {
           },
           body: JSON.stringify({
             text: translatedText,
-            language: "tw",
-            speaker_id: "twi_speaker_4"
+            language: targetLanguage,
+            speaker_id: (() => {
+              const speakerMap = {
+                tw: "twi_speaker_4",
+                ki: "kikuyu_speaker_1", 
+                ee: "ewe_speaker_3"
+              };
+              return speakerMap[targetLanguage as keyof typeof speakerMap] || "twi_speaker_4";
+            })()
           }),
         }
       );
@@ -442,14 +474,17 @@ export default function ChatPage() {
         console.log("Assistant audio playback ended");
         URL.revokeObjectURL(audioUrl);
         setIsSpeaking(false);
+        setCurrentAudio(null);
       };
       audio.onerror = (e) => {
         console.error("Assistant audio playback error:", e);
         URL.revokeObjectURL(audioUrl);
         setIsSpeaking(false);
+        setCurrentAudio(null);
       };
 
       setIsSpeaking(true);
+      setCurrentAudio(audio);
       await audio.play();
       console.log("Assistant audio playback started");
 
@@ -703,14 +738,53 @@ export default function ChatPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="ml-2 p-1 h-8 w-8"
+                              className={`ml-2 p-1 h-8 w-8 ${isSpeaking ? 'bg-red-100 text-red-600' : ''}`}
                               onClick={() => convertResponseToLocalAudio(message.content)}
-                              disabled={isSpeaking}
                             >
-                              <Volume2 className="w-4 h-4" />
+                              {isSpeaking ? (
+                                <VolumeX className="w-4 h-4" />
+                              ) : (
+                                <Volume2 className="w-4 h-4" />
+                              )}
                             </Button>
                           )}
                         </div>
+                        
+                        {/* Source Information */}
+                        {message.type === "assistant" && ((message.sources && message.sources.length > 0) || (message.sourceFiles && message.sourceFiles.length > 0)) && (
+                          <div className="mt-4 pt-3 border-t border-gray-200">
+                            <div className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                              <BookOpen className="w-4 h-4" />
+                              Sources:
+                            </div>
+                            {message.sources && message.sources.length > 0 && (
+                              <div className="mb-2">
+                                <div className="text-xs font-medium text-gray-600 mb-1">References:</div>
+                                <ul className="space-y-1">
+                                  {message.sources.map((source, index) => (
+                                    <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
+                                      <span className="text-blue-500">•</span>
+                                      {source}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {message.sourceFiles && message.sourceFiles.length > 0 && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-600 mb-1">Source Files:</div>
+                                <ul className="space-y-1">
+                                  {message.sourceFiles.map((file, index) => (
+                                    <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
+                                      <span className="text-green-500">📄</span>
+                                      {file}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         {message.type === "assistant" && message.topic && (
                             <div className="mt-4 space-y-3">
                               <div className="flex items-center gap-2">
