@@ -21,6 +21,23 @@ index = pc.Index(pinecone_index_name)
 class QueryRequest(BaseModel):
     question: str
 
+def build_pinecone_results(results):
+    """Build pinecone_results from query results"""
+    pinecone_results = []
+    for match in results.get("matches", []):
+        metadata = match.get("metadata", {})
+        chunk_text = metadata.get("text")
+        if chunk_text:
+            pinecone_results.append({
+                "text": chunk_text,
+                "metadata": {
+                    "source": metadata.get("source", "Unknown"),
+                    "page": metadata.get("page", "N/A"),
+                    "section": metadata.get("section", "N/A")
+                }
+            })
+    return pinecone_results
+
 @router.post("/query")
 async def query_handler(req: QueryRequest):
     question = req.question.strip()
@@ -37,21 +54,15 @@ async def query_handler(req: QueryRequest):
 
         # Retrieve top 5 similar chunks with metadata
         results = index.query(vector=embedding, top_k=5, include_metadata=True)
-
+        
+        # Debug: Print Pinecone results
+        print(f"Pinecone results: {results}")
+        
         # Build context with source information for citations
-        pinecone_results = []
-        for match in results.get("matches", []):
-            metadata = match.get("metadata", {})
-            chunk_text = metadata.get("text")
-            if chunk_text:
-                pinecone_results.append({
-                    "text": chunk_text,
-                    "metadata": {
-                        "source": metadata.get("source", "Unknown"),
-                        "page": metadata.get("page", "N/A"),
-                        "section": metadata.get("section", "N/A")
-                    }
-                })
+        pinecone_results = build_pinecone_results(results)
+        
+        # Debug: Print number of pinecone_results
+        print(f"Number of pinecone_results: {len(pinecone_results)}")
 
         # Create system prompt
         system_prompt = """
@@ -74,6 +85,9 @@ Context:
     for doc in pinecone_results
 ])}
 """.strip()
+        
+        # Debug: Print user prompt
+        print(f"User prompt: {user_prompt}")
 
         # Get GPT response
         response = client.chat.completions.create(
