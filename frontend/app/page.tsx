@@ -397,11 +397,11 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex flex-col md:flex-row h-screen bg-white">
       {/* Settings Panel */}
       {showSettings && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-96 max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-4 md:p-6 w-11/12 md:w-96 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Settings</h2>
               <Button variant="ghost" size="sm" onClick={() => setShowSettings(false)}>
@@ -420,53 +420,59 @@ export default function ChatPage() {
               <div>
                 <h3 className="font-medium mb-2">Theme</h3>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">Light</Button>
-                  <Button variant="outline" size="sm" className="flex-1">Dark</Button>
-                  <Button variant="outline" size="sm" className="flex-1">Auto</Button>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs md:text-sm">Light</Button>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs md:text-sm">Dark</Button>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs md:text-sm">Auto</Button>
                 </div>
               </div>
               <div>
                 <h3 className="font-medium mb-2">Response Language</h3>
-                <div className="grid grid-cols-3 gap-2">
-                  <Button 
-                    variant={preferredLanguage === "en" ? "default" : "outline"} 
-                    size="sm" 
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <Button
+                    variant={preferredLanguage === "en" ? "default" : "outline"}
+                    size="sm"
                     onClick={() => handleLanguageChange("en")}
+                    className="text-xs md:text-sm"
                   >
                     English
                   </Button>
-                  <Button 
-                    variant={preferredLanguage === "tw" ? "default" : "outline"} 
-                    size="sm" 
+                  <Button
+                    variant={preferredLanguage === "tw" ? "default" : "outline"}
+                    size="sm"
                     onClick={() => handleLanguageChange("tw")}
+                    className="text-xs md:text-sm"
                   >
                     Twi
                   </Button>
-                  <Button 
-                    variant={preferredLanguage === "gaa" ? "default" : "outline"} 
-                    size="sm" 
+                  <Button
+                    variant={preferredLanguage === "gaa" ? "default" : "outline"}
+                    size="sm"
                     onClick={() => handleLanguageChange("gaa")}
+                    className="text-xs md:text-sm"
                   >
                     Ga
                   </Button>
-                  <Button 
-                    variant={preferredLanguage === "ee" ? "default" : "outline"} 
-                    size="sm" 
+                  <Button
+                    variant={preferredLanguage === "ee" ? "default" : "outline"}
+                    size="sm"
                     onClick={() => handleLanguageChange("ee")}
+                    className="text-xs md:text-sm"
                   >
                     Ewe
                   </Button>
-                  <Button 
-                    variant={preferredLanguage === "fat" ? "default" : "outline"} 
-                    size="sm" 
+                  <Button
+                    variant={preferredLanguage === "fat" ? "default" : "outline"}
+                    size="sm"
                     onClick={() => handleLanguageChange("fat")}
+                    className="text-xs md:text-sm"
                   >
                     Fante
                   </Button>
-                  <Button 
-                    variant={preferredLanguage === "dag" ? "default" : "outline"} 
-                    size="sm" 
+                  <Button
+                    variant={preferredLanguage === "dag" ? "default" : "outline"}
+                    size="sm"
                     onClick={() => handleLanguageChange("dag")}
+                    className="text-xs md:text-sm"
                   >
                     Dagbani
                   </Button>
@@ -480,7 +486,7 @@ export default function ChatPage() {
                 </div>
               </div>
               <div className="pt-4 border-t">
-                <Button variant="outline" className="w-full" onClick={() => setShowSettings(false)}>
+                <Button variant="outline" className="w-full text-sm" onClick={() => setShowSettings(false)}>
                   Close Settings
                 </Button>
               </div>
@@ -490,8 +496,8 @@ export default function ChatPage() {
       )}
 
       {/* Left Sidebar */}
-      <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
-        <div className="p-4">
+      <div className="w-full md:w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
+        <div className="p-3 md:p-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
               <div className="w-4 h-4 bg-white rounded-full"></div>
@@ -501,15 +507,15 @@ export default function ChatPage() {
         </div>
 
         <div className="px-3 space-y-2">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-gray-700" onClick={handleNewChat}>
+          <Button variant="ghost" className="w-full justify-start gap-3 text-gray-700 text-sm md:text-base" onClick={handleNewChat}>
             <MessageSquarePlus className="w-4 h-4" /> New chat
           </Button>
-          <Button variant="ghost" className="w-full justify-start gap-3 text-gray-700" onClick={handleSettings}>
+          <Button variant="ghost" className="w-full justify-start gap-3 text-gray-700 text-sm md:text-base" onClick={handleSettings}>
             <Settings className="w-4 h-4" /> Settings
           </Button>
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start gap-3 text-gray-700"
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 text-gray-700 text-sm md:text-base"
             onClick={() => window.open('https://github.com/DeeGodman/StudyGPT/tree/c407c99c85ff4b3df154b28bc24703550275472c/SLIDES', '_blank')}
           >
             <Library className="w-4 h-4" /> Library
@@ -518,10 +524,10 @@ export default function ChatPage() {
 
         <div className="px-3 mt-6 flex-1">
           <div className="text-xs font-medium text-gray-500 mb-2 px-3">Chats</div>
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 h-[calc(100vh-200px)] md:h-[calc(100vh-250px)]">
             <div className="space-y-1">
               {chatHistory.map((chat, index) => (
-                <Button key={index} variant="ghost" className="w-full justify-start text-sm text-gray-700 h-auto py-2 px-3 text-left whitespace-normal">
+                <Button key={index} variant="ghost" className="w-full justify-start text-xs md:text-sm text-gray-700 h-auto py-2 px-3 text-left whitespace-normal">
                   {chat}
                 </Button>
               ))}
@@ -544,28 +550,28 @@ export default function ChatPage() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div className="border-b border-gray-200 px-4 py-3 md:px-6 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-medium">StudyGPT</h1>
             <ChevronDown className="w-4 h-4 text-gray-500" />
             {preferredLanguage !== "en" && (
-              <Badge variant="secondary" className="text-xs">
-                {preferredLanguage === "tw" ? "Twi" : 
-                 preferredLanguage === "gaa" ? "Ga" : 
-                 preferredLanguage === "ee" ? "Ewe" : 
-                 preferredLanguage === "fat" ? "Fante" : 
-                 preferredLanguage === "dag" ? "Dagbani" : 
-                 preferredLanguage === "gur" ? "Gurene" : 
-                 preferredLanguage === "yo" ? "Yoruba" : 
-                 preferredLanguage === "ki" ? "Kikuyu" : 
-                 preferredLanguage === "luo" ? "Luo" : 
+              <Badge variant="secondary" className="text-xs hidden md:inline-block">
+                {preferredLanguage === "tw" ? "Twi" :
+                 preferredLanguage === "gaa" ? "Ga" :
+                 preferredLanguage === "ee" ? "Ewe" :
+                 preferredLanguage === "fat" ? "Fante" :
+                 preferredLanguage === "dag" ? "Dagbani" :
+                 preferredLanguage === "gur" ? "Gurene" :
+                 preferredLanguage === "yo" ? "Yoruba" :
+                 preferredLanguage === "ki" ? "Kikuyu" :
+                 preferredLanguage === "luo" ? "Luo" :
                  preferredLanguage === "mer" ? "Kimeru" : preferredLanguage}
               </Badge>
             )}
           </div>
           {messages.length > 0 && (
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+              <Button variant="outline" size="sm" className="gap-2 bg-transparent hidden sm:flex">
                 <Share className="w-4 h-4" /> Share
               </Button>
               <Button variant="ghost" size="sm">
@@ -575,16 +581,16 @@ export default function ChatPage() {
           )}
         </div>
 
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-y-auto max-h-[70vh] md:max-h-[80vh] px-2 py-4">
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full px-6">
-              <div className="max-w-4xl w-full">
+            <div className="flex flex-col items-center justify-center h-full px-4 md:px-6">
+              <div className="max-w-4xl w-full px-4 md:px-0">
                 <div className="text-center mb-16">
-                  <h1 className="text-5xl font-normal text-gray-900 mb-16">What do you want to Study today?</h1>
+                  <h1 className="text-3xl md:text-5xl font-normal text-gray-900 mb-8 md:mb-16">What do you want to Study today?</h1>
                 </div>
-                <div className="max-w-3xl mx-auto mb-8">
+                <div className="max-w-3xl mx-auto mb-8 w-full px-4 md:px-0">
                   <form onSubmit={handleSubmit} className="relative">
-                    <Input value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="" className="w-full py-4 px-4 pr-24 text-lg rounded-3xl border-gray-300 shadow-sm" disabled={isLoading}/>
+                    <Input value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="" className="w-full py-4 px-4 pr-24 md:pr-32 text-lg rounded-3xl border-gray-300 shadow-sm" disabled={isLoading}/>
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                       <Button variant="ghost" size="sm" type="button" className="p-2"><Menu className="w-5 h-5 text-gray-500" /></Button>
                       <Button
@@ -600,53 +606,53 @@ export default function ChatPage() {
                     </div>
                   </form>
                 </div>
-                <div className="max-w-3xl mx-auto">
+                <div className="max-w-3xl mx-auto w-full px-4 md:px-0">
                   <div className="flex flex-wrap justify-center gap-3">
                     {actionButtons.map((action, index) => (
-                      <Button key={index} variant="outline" className={`gap-3 px-4 py-3 rounded-2xl border-0 ${action.color} hover:opacity-80`}><action.icon className="w-4 h-4" />{action.label}</Button>
+                      <Button key={index} variant="outline" className={`gap-3 px-4 py-3 rounded-2xl border-0 ${action.color} hover:opacity-80 w-full sm:w-auto`}><action.icon className="w-4 h-4" />{action.label}</Button>
                     ))}
                   </div>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="px-6 py-6">
+            <div className="px-4 py-4 md:px-6 md:py-6">
               <div className="max-w-4xl mx-auto space-y-6">
                 {messages.map((message) => (
-                  <div key={message.id} className={`flex gap-4 ${message.type === "user" ? "justify-end" : "justify-start"}`}>
+                  <div key={message.id} className={`flex gap-3 md:gap-4 ${message.type === "user" ? "justify-end" : "justify-start"}`}>
                     {message.type === "assistant" && (
-                      <Avatar className="w-8 h-8">
+                      <Avatar className="w-8 h-8 flex-shrink-0">
                         <AvatarFallback className="text-xs bg-blue-100 text-blue-700">S</AvatarFallback>
                       </Avatar>
                     )}
                     <div className={`max-w-3xl ${message.type === "user" ? "order-1" : "order-2"}`}>
                       <Card className={`${message.type === "user" ? "bg-blue-500 text-white" : "bg-gray-50"}`}>
-                                              <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="whitespace-pre-wrap flex-1">{message.content}</div>
-                          {message.type === "assistant" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={`ml-2 p-1 h-8 w-8 ${isSpeaking ? 'bg-red-100 text-red-600' : ''}`}
-                              onClick={() => {
-                                const language = preferredLanguage === "en" ? "tw" : preferredLanguage;
-                                const speakerId = getSpeakerId(language);
-                                playTTS(message.content, language, speakerId);
-                              }}
-                            >
-                              {isSpeaking ? (
-                                <VolumeX className="w-4 h-4" />
-                              ) : (
-                                <Volume2 className="w-4 h-4" />
-                              )}
-                            </Button>
-                          )}
-                        </div>
+                        <CardContent className="p-3 md:p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="whitespace-pre-wrap flex-1 text-sm md:text-base leading-relaxed">{message.content}</div>
+                            {message.type === "assistant" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className={`ml-2 p-1 h-8 w-8 ${isSpeaking ? 'bg-red-100 text-red-600' : ''}`}
+                                onClick={() => {
+                                  const language = preferredLanguage === "en" ? "tw" : preferredLanguage;
+                                  const speakerId = getSpeakerId(language);
+                                  playTTS(message.content, language, speakerId);
+                                }}
+                              >
+                                {isSpeaking ? (
+                                  <VolumeX className="w-4 h-4" />
+                                ) : (
+                                  <Volume2 className="w-4 h-4" />
+                                )}
+                              </Button>
+                            )}
+                          </div>
                         
                         {/* Source Information */}
                         {message.type === "assistant" && ((message.sources && message.sources.length > 0) || (message.sourceFiles && message.sourceFiles.length > 0)) && (
-                          <div className="mt-4 pt-3 border-t border-gray-200">
+                          <div className="mt-3 pt-3 border-t border-gray-200">
                             <div className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                               <BookOpen className="w-4 h-4" />
                               Sources:
@@ -658,7 +664,7 @@ export default function ChatPage() {
                                   {message.sources.map((source, index) => (
                                     <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
                                       <span className="text-blue-500">•</span>
-                                      {source}
+                                      <span className="text-xs">{source}</span>
                                     </li>
                                   ))}
                                 </ul>
@@ -671,7 +677,7 @@ export default function ChatPage() {
                                   {message.sourceFiles.map((file, index) => (
                                     <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
                                       <span className="text-green-500">📄</span>
-                                      {file}
+                                      <span className="text-xs">{file}</span>
                                     </li>
                                   ))}
                                 </ul>
@@ -681,7 +687,7 @@ export default function ChatPage() {
                         )}
                         {message.type === "assistant" && message.topic && (
                             <div className="mt-4 space-y-3">
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <Badge variant="secondary" className="text-xs">
                                   {message.topic}
                                 </Badge>
@@ -699,9 +705,9 @@ export default function ChatPage() {
                                   </div>
                                   <ul className="space-y-1">
                                     {message.keyPoints.map((point, index) => (
-                                      <li key={index} className="text-sm flex items-start gap-2">
+                                      <li key={index} className="text-xs md:text-sm flex items-start gap-2">
                                         <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                                        {point}
+                                        <span className="text-xs md:text-sm">{point}</span>
                                       </li>
                                     ))}
                                   </ul>
@@ -713,7 +719,7 @@ export default function ChatPage() {
                       </Card>
                       <div className="text-xs text-gray-500 mt-2 flex items-center gap-2">
                         <Clock className="w-3 h-3" />
-                        {message.timestamp.toLocaleTimeString()}
+                        <span className="text-xs">{message.timestamp.toLocaleTimeString()}</span>
                       </div>
                     </div>
                     {message.type === "user" && (
@@ -725,14 +731,14 @@ export default function ChatPage() {
                 ))}
                 {isLoading && (
                   <Card className="bg-gray-50 border-gray-200">
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 md:p-6">
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1">
                           <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"/>
                           <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay:"0.1s"}}/>
                           <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay:"0.2s"}}/>
                         </div>
-                        <span className="text-gray-600">StudyGPT is thinking...</span>
+                        <span className="text-gray-600 text-sm md:text-base">StudyGPT is thinking...</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -743,10 +749,10 @@ export default function ChatPage() {
         </div>
 
         {messages.length > 0 && (
-          <div className="border-t border-gray-200 p-6 bg-gray-50">
-            <div className="max-w-4xl mx-auto">
+          <div className="border-t border-gray-200 p-4 md:p-6 bg-gray-50">
+            <div className="max-w-4xl mx-auto w-full px-4 md:px-0">
               <form onSubmit={handleSubmit} className="relative">
-                <Input value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Ask a follow-up question or explore a new topic..." className="w-full py-4 px-4 pr-24 text-lg rounded-3xl border-gray-300 shadow-sm bg-white" disabled={isLoading}/>
+                <Input value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Ask a follow-up question or explore a new topic..." className="w-full py-4 px-4 pr-24 md:pr-32 text-lg rounded-3xl border-gray-300 shadow-sm bg-white" disabled={isLoading}/>
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                   <Button variant="ghost" size="sm" type="button" className="p-2"><Menu className="w-5 h-5 text-gray-500" /></Button>
                   <Button
